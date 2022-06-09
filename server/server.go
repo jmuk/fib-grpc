@@ -2,19 +2,21 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"sync"
 
+	"github.com/bufbuild/connect-go"
 	v1 "github.com/jmuk/fib-grpc/gen/fib/v1"
+	"github.com/jmuk/fib-grpc/gen/fib/v1/fibv1connect"
+	"github.com/jmuk/fib-grpc/gen/google/longrunning/longrunningconnect"
 	"google.golang.org/genproto/googleapis/longrunning"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Server struct {
-	v1.UnimplementedFibServiceServer
-	longrunning.UnimplementedOperationsServer
+	fibv1connect.UnimplementedFibServiceHandler
+	longrunningconnect.UnimplementedOperationsHandler
 
 	ops sync.Map
 }
@@ -30,19 +32,18 @@ func fib(n int64) int64 {
 	return fib(n-1) + fib(n-2)
 }
 
-func (s *Server) Fib(ctx context.Context, req *v1.FibRequest) (*v1.FibResponse, error) {
+func (s *Server) Fib(ctx context.Context, req *connect.Request[v1.FibRequest]) (*connect.Response[v1.FibResponse], error) {
 	newName := fmt.Sprintf("%x", rand.Uint64())
 	s.ops.Store(newName, newOperation(func() int64 {
-		return fib(req.N)
+		return fib(req.Msg.N)
 	}))
-	return &v1.FibResponse{Name: newName}, nil
+	return connect.NewResponse(&v1.FibResponse{Name: newName}), nil
 }
 
-func (s *Server) GetOperation(ctx context.Context, req *longrunning.GetOperationRequest) (*longrunning.Operation, error) {
-	got, ok := s.ops.Load(req.Name)
+func (s *Server) GetOperation(ctx context.Context, req *connect.Request[longrunning.GetOperationRequest]) (*connect.Response[longrunning.Operation], error) {
+	got, ok := s.ops.Load(req.Msg.Name)
 	if !ok {
-		return nil, status.Errorf(codes.NotFound, "not found")
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("not found"))
 	}
-
-	return got.(*operation).ToOperation(req.Name), nil
+	return connect.NewResponse(got.(*operation).ToOperation(req.Msg.Name)), nil
 }
