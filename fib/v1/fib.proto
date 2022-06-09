@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package fib.v1;
+
+option go_package = "github.com/jmuk/fib-grpc/fib/v1";
+
+message FibRequest {
+  int64 n = 1;
+}
+
+message FibResponse {
+  string name = 1;
+}
+
+service FibService {
+  rpc Fib(FibRequest) returns (FibResponse);
+}
