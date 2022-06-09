@@ -23,3 +23,12 @@ GetOperation for simplicity).
 % ./bin/server &
 % ./bin/client -n 45
 ```
+
+# How to generate files from proto
+
+We use `buf` CLI for that (see https://buf.build/).
+
+```sh
+% buf generate
+% buf generate buf.build/googleapis/googleapis --template buf.gen.con.yaml --path google/longrunning
+```
