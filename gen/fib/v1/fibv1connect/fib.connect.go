@@ -2,13 +2,13 @@
 //
 // Source: fib/v1/fib.proto
 
-package v1connect
+package fibv1connect
 
 import (
 	context "context"
 	errors "errors"
 	connect_go "github.com/bufbuild/connect-go"
-	v1 "github.com/jmuk/fib-grpc/fib/v1"
+	v1 "github.com/jmuk/fib-grpc/gen/fib/v1"
 	http "net/http"
 	strings "strings"
 )

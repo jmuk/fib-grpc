@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: fib/v1/fib.proto
 
-package v1
+package fibv1
 
 import (
 	context "context"
