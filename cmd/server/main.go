@@ -1,24 +1,26 @@
 package main
 
 import (
-	"log"
-	"net"
+	"net/http"
 
-	v1 "github.com/jmuk/fib-grpc/gen/fib/v1"
+	"github.com/jmuk/fib-grpc/gen/fib/v1/fibv1connect"
+	"github.com/jmuk/fib-grpc/gen/google/longrunning/longrunningconnect"
 	"github.com/jmuk/fib-grpc/server"
-	"google.golang.org/genproto/googleapis/longrunning"
-	"google.golang.org/grpc"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 func main() {
-	log.Printf("starting a grpc server at port 8080")
-	lis, err := net.Listen("tcp", "localhost:8080")
-	if err != nil {
-		panic(err)
-	}
-	gs := grpc.NewServer()
+	mux := http.NewServeMux()
+	// The generated constructors return a path and a plain net/http
+	// handler.
 	s := server.NewServer()
-	v1.RegisterFibServiceServer(gs, s)
-	longrunning.RegisterOperationsServer(gs, s)
-	gs.Serve(lis)
+	mux.Handle(longrunningconnect.NewOperationsHandler(s))
+	mux.Handle(fibv1connect.NewFibServiceHandler(s))
+	http.ListenAndServe(
+		"localhost:8080",
+		// For gRPC clients, it's convenient to support HTTP/2 without TLS. You can
+		// avoid x/net/http2 by using http.ListenAndServeTLS.
+		h2c.NewHandler(mux, &http2.Server{}),
+	)
 }
